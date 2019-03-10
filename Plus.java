@@ -118,7 +118,7 @@ public class Plus extends AppCompatActivity {
         /////////////리스트뷰///////////////
         listView=(ListView)findViewById(R.id.list);
         plusAdapter=new PlusAdapter(items,getApplicationContext());
-        plusAdapter.addItem(new PlusItem("dnsdi"));
+        plusAdapter.addItem(new PlusItem("dnsi"));
         listView.setAdapter(plusAdapter);
         ///////////////////////////////
 
