@@ -1,15 +1,20 @@
 package com.example.admin.trip;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -27,7 +32,7 @@ import java.net.URL;
 
 public class join extends AppCompatActivity {
     EditText name,pass,id,pass_chek;
-    String nameInput,passInput,idInput,pass_chekInput;
+    ImageView img;
     private String mJsonString;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,11 +44,7 @@ public class join extends AppCompatActivity {
         pass = (EditText) findViewById(R.id.pass);
         pass_chek=(EditText)findViewById(R.id.pass1);
         id = (EditText) findViewById(R.id.id);
-
-        nameInput = name.getText().toString();
-        passInput = pass.getText().toString();
-        pass_chekInput=pass_chek.getText().toString();
-        idInput = id.getText().toString();
+        img = (ImageView) findViewById(R.id.imageView);
 
         join.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,7 +67,36 @@ public class join extends AppCompatActivity {
                 ////////////////////빈칸체크
             }
         });
+        img.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final CharSequence[] items = {"갤러리", "사진찍기"};
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(join.this);
+
+                // 제목셋팅
+                alertDialogBuilder.setTitle("선택 목록 대화 상자");
+                alertDialogBuilder.setItems(items,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int i){
+                                // 프로그램을 종료한다
+                                switch (i){
+                                    case 0:
+
+                                }
+                                Toast.makeText(getApplicationContext(), items[i] + " 선택했습니다.", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        });
+                // 다이얼로그 생성
+                AlertDialog alertDialog = alertDialogBuilder.create();
+
+                // 다이얼로그 보여주기
+                alertDialog.show();
+
+            }
+        });
     }
+
     class InsertData extends AsyncTask<String, Void, String>{
         @Override
         protected void onPreExecute() {
