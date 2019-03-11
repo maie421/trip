@@ -232,7 +232,7 @@ public class join extends AppCompatActivity {
             try{
                 photoFile=createImageFile();
             }catch (IOException e) {
-                Toast.makeText(getApplicationContext(), "createImageFile Failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "createImageFile Failed.", Toast.LENGTH_SHORT).show();
             }
             if(photoFile !=null){
                 photoURI=Uri.fromFile(photoFile);
