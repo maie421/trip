@@ -207,7 +207,7 @@ public class join extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     finish();
                 }else
-                    Toast.makeText(join.this, "중복된 아이디 입니다."+result, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(join.this, "중복된 아이디 입니."+result, Toast.LENGTH_SHORT).show();
             }
 
         } catch (JSONException e) {
