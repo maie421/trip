@@ -6,8 +6,13 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
+import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +27,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,9 +38,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class join extends AppCompatActivity {
+    private static final int REQUEST_IMAGE_CAPTURE = 1; //메모리할당 한번만 final 값변경 X
+    private static final int REQUEST_TAKE_PHOTO = 2;
+    private static final int REQUEST_IMAGE_CROP = 3;
     EditText name,pass,id,pass_chek;
     ImageView img;
     private String mJsonString;
+    String mCurrentPhotoPath;
+    Uri photoURI,albumURI=null;
+    Boolean album = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,7 +94,11 @@ public class join extends AppCompatActivity {
                                 // 프로그램을 종료한다
                                 switch (i){
                                     case 0:
-
+                                        AlbumAction();
+                                        break;
+                                    case 1:
+                                        dispatchTakePictureIntent();
+                                        break;
                                 }
                                 Toast.makeText(getApplicationContext(), items[i] + " 선택했습니다.", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
@@ -170,6 +187,7 @@ public class join extends AppCompatActivity {
             }
         }
     }
+
     private void showResult() {
         String result = null;
         String TAG_JSON = "webnautes";
@@ -194,6 +212,60 @@ public class join extends AppCompatActivity {
 
         } catch (JSONException e) {
             Log.d("디비", "showResult : ", e);
+        }
+    }
+    private File createImageFile() throws IOException{
+        String imageFileName="tmp_"+String.valueOf(System.currentTimeMillis())+".jpg";
+        File storageDir=new File(Environment.getExternalStorageDirectory(),imageFileName);
+        mCurrentPhotoPath=storageDir.getAbsolutePath();//실행시킨 위치 정보도 함께 반환
+        return storageDir;
+    }
+    private void AlbumAction(){
+        Intent intent=new Intent(Intent.ACTION_PICK);
+        intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
+        startActivityForResult(intent,REQUEST_TAKE_PHOTO );
+    }
+    private void dispatchTakePictureIntent(){
+        Intent takePictureIntent=new Intent(MediaStore.ACTION_IMAGE_CAPTURE,null);
+        if(takePictureIntent.resolveActivity(getPackageManager())!=null){
+            File photoFile=null;
+            try{
+                photoFile=createImageFile();
+            }catch (IOException e) {
+                Toast.makeText(getApplicationContext(), "createImageFile Failed", Toast.LENGTH_SHORT).show();
+            }
+            if(photoFile !=null){
+                photoURI=Uri.fromFile(photoFile);
+                startActivityForResult(takePictureIntent,REQUEST_IMAGE_CAPTURE);
+            }
+        }
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQUEST_TAKE_PHOTO:
+                album = true;
+                File albumFile = null;
+                try {
+                    albumFile = createImageFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (albumFile != null) {
+                    albumURI = Uri.fromFile(albumFile);
+                }
+                photoURI = data.getData();
+                Bitmap image_bitmap = null;
+                try {
+                    image_bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), photoURI);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                img.setImageBitmap(image_bitmap);
+                break;
+            case REQUEST_IMAGE_CAPTURE:
+                break;
         }
     }
 }
