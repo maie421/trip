@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.provider.MediaStore.Images;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -43,6 +45,7 @@ public class join extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CROP = 3;
     EditText name,pass,id,pass_chek;
     ImageView img;
+    Bitmap photo;
     private String mJsonString;
     String mCurrentPhotoPath;
     Uri photoURI,albumURI=null;
@@ -222,7 +225,7 @@ public class join extends AppCompatActivity {
     }
     private void AlbumAction(){
         Intent intent=new Intent(Intent.ACTION_PICK);
-        intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
+        intent.setType(Images.Media.CONTENT_TYPE);
         startActivityForResult(intent,REQUEST_TAKE_PHOTO );
     }
     private void dispatchTakePictureIntent(){
@@ -236,9 +239,29 @@ public class join extends AppCompatActivity {
             }
             if(photoFile !=null){
                 photoURI=Uri.fromFile(photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 startActivityForResult(takePictureIntent,REQUEST_IMAGE_CAPTURE);
             }
         }
+    }
+    private void cropImage(){
+        Log.d("리스트","crop");
+        Intent cropIntent = new Intent("com.android.camera.action.CROP");
+
+        cropIntent.setDataAndType(photoURI,"image/*");
+        cropIntent.putExtra("scale",true);
+        cropIntent.putExtra( "aspectX",1);
+        cropIntent.putExtra( "aspectY", 1);
+        cropIntent.putExtra( "outputX", 200);
+        cropIntent.putExtra( "outputY", 200);
+
+        Log.d("들어왔다","자르기");
+        if(album==false){
+            cropIntent.putExtra("output",photoURI);
+        }else if(album==true){
+            cropIntent.putExtra("output",albumURI);
+        }
+        startActivityForResult(cropIntent,REQUEST_IMAGE_CROP);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -258,13 +281,27 @@ public class join extends AppCompatActivity {
                 photoURI = data.getData();
                 Bitmap image_bitmap = null;
                 try {
-                    image_bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), photoURI);
+                    image_bitmap = Images.Media.getBitmap(getContentResolver(), photoURI);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 img.setImageBitmap(image_bitmap);
                 break;
             case REQUEST_IMAGE_CAPTURE:
+                cropImage();
+                break;
+            case REQUEST_IMAGE_CROP:
+                photo=BitmapFactory.decodeFile(photoURI.getPath());
+                img.setImageBitmap(photo);
+                Intent mediaScanIntent=new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                if(album==false){
+                    mediaScanIntent.setData(photoURI);
+                }else if(album==true){
+                    album=false;
+                    mediaScanIntent.setData(albumURI);
+                    Log.d("오류","albumURI");
+                }
+                this.sendBroadcast(mediaScanIntent); //송신
                 break;
         }
     }
