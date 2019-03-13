@@ -17,6 +17,7 @@ import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -29,15 +30,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 
 public class join extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CAPTURE = 1; //메모리할당 한번만 final 값변경 X
@@ -47,7 +51,7 @@ public class join extends AppCompatActivity {
     ImageView img;
     Bitmap photo;
     private String mJsonString;
-    String mCurrentPhotoPath;
+    String mCurrentPhotoPath,image;
     Uri photoURI,albumURI=null;
     Boolean album = false;
     @Override
@@ -77,8 +81,13 @@ public class join extends AppCompatActivity {
                 }else if(!(pass.getText().toString().equals(pass_chek.getText().toString()))){
                     Toast.makeText(join.this, "비밀번호가 다릅니다", Toast.LENGTH_SHORT).show();
                 } else {
+                    BitMapToString(photo);
                     InsertData task = new InsertData();
-                    task.execute("http://stu.dothome.co.kr/TripDB/member.php",name.getText().toString(),id.getText().toString(),pass.getText().toString());
+                    try {
+                        task.execute("http://stu.dothome.co.kr/TripDB/member.php",name.getText().toString(),id.getText().toString(),pass.getText().toString(),URLEncoder.encode(image,"utf-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                 }
                 ////////////////////빈칸체크
             }
@@ -142,9 +151,12 @@ public class join extends AppCompatActivity {
             String name = (String)params[1];
             String id = (String)params[2];
             String pass=(String)params[3];
+            String img=(String)params[4];
 
             String serverURL = (String)params[0];
-            String postParameters = "name=" + name + "&id=" + id+"&pass"+pass;
+            String postParameters = null;
+
+            postParameters = "name=" + name + "&id=" + id+"&pass"+pass+"&img="+img;
 
             try {
                 URL url = new URL(serverURL);
@@ -210,7 +222,7 @@ public class join extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     finish();
                 }else
-                    Toast.makeText(join.this, "중복된 아이디 입니."+result, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(join.this, "중복된 아이디 입니다.", Toast.LENGTH_SHORT).show();
             }
 
         } catch (JSONException e) {
@@ -263,6 +275,18 @@ public class join extends AppCompatActivity {
         }
         startActivityForResult(cropIntent,REQUEST_IMAGE_CROP);
     }
+    public void BitMapToString(Bitmap bitmap){
+        ByteArrayOutputStream baos=new  ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG,100, baos);    //bitmap compress
+        byte [] arr=baos.toByteArray();
+        image= Base64.encodeToString(arr, Base64.DEFAULT);
+        String temp="";
+        try{
+            temp="&imagedevice="+ URLEncoder.encode(image,"utf-8");
+        }catch (Exception e){
+            Log.e("exception",e.toString());
+        }
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -279,13 +303,13 @@ public class join extends AppCompatActivity {
                     albumURI = Uri.fromFile(albumFile);
                 }
                 photoURI = data.getData();
-                Bitmap image_bitmap = null;
+                photo = null;
                 try {
-                    image_bitmap = Images.Media.getBitmap(getContentResolver(), photoURI);
+                    photo= Images.Media.getBitmap(getContentResolver(), photoURI);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                img.setImageBitmap(image_bitmap);
+                img.setImageBitmap(photo);
                 break;
             case REQUEST_IMAGE_CAPTURE:
                 cropImage();
