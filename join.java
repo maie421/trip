@@ -156,7 +156,7 @@ public class join extends AppCompatActivity {
             String serverURL = (String)params[0];
             String postParameters = null;
 
-            postParameters = "name=" + name + "&id=" + id+"&pass"+pass+"&img="+img;
+            postParameters = "name=" + name + "&id=" + id+"&pass="+pass+"&img="+img;
 
             try {
                 URL url = new URL(serverURL);

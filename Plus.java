@@ -81,20 +81,19 @@ package com.example.admin.trip;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -102,11 +101,22 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class Plus extends AppCompatActivity {
     ListView listView;
     PlusAdapter plusAdapter;
+    private String mJsonString;
     ArrayList<PlusItem> items=new ArrayList<PlusItem>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,18 +128,120 @@ public class Plus extends AppCompatActivity {
         /////////////리스트뷰///////////////
         listView=(ListView)findViewById(R.id.list);
         plusAdapter=new PlusAdapter(items,getApplicationContext());
-        plusAdapter.addItem(new PlusItem("dnif"));
-        listView.setAdapter(plusAdapter);
+        SharedPreferences sf = getSharedPreferences("sFile",MODE_PRIVATE);
+        //text라는 key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
+        String text = sf.getString("text","");
+
+        List task=new List();
+        task.execute("http://stu.dothome.co.kr/TripDB/addressbook.php",text);
+
         ///////////////////////////////
 
-        Button result=(Button)findViewById(R.id.button);//확인
-        result.setOnClickListener(new View.OnClickListener() {
+        Button result1=(Button)findViewById(R.id.button);//확인
+        result1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent=new Intent(getApplicationContext(),Countrysetting.class);
                 startActivityForResult(intent,1);
             }
         });
+    }
+    class List extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... strings) {
+
+            String id = (String)strings[1];
+
+            String serverURL = (String)strings[0];
+            String postParameters = null;
+
+            postParameters = "id="+id;
+
+            try {
+                URL url = new URL(serverURL);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+
+                httpURLConnection.setReadTimeout(5000);
+                httpURLConnection.setConnectTimeout(5000);
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.connect();
+
+                OutputStream outputStream = httpURLConnection.getOutputStream();
+                outputStream.write(postParameters.getBytes("UTF-8"));
+                outputStream.flush();
+                outputStream.close();
+
+                int responseStatusCode = httpURLConnection.getResponseCode();
+                Log.d("디비", "POST response code - " + responseStatusCode);
+
+                InputStream inputStream;
+                if(responseStatusCode == HttpURLConnection.HTTP_OK) {
+                    inputStream = httpURLConnection.getInputStream();
+                }
+                else{
+                    inputStream = httpURLConnection.getErrorStream();
+                }
+
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+                StringBuilder sb = new StringBuilder();
+                String line = null;
+
+                while((line = bufferedReader.readLine()) != null){
+                    sb.append(line);
+                }
+                bufferedReader.close();
+
+                return sb.toString();
+            } catch (Exception e) {
+
+                Log.d("디비", "InsertData: Error ", e);
+
+                return new String("Error: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            Log.d("디비", "response - " + result);
+
+            if (result == null) {
+                Log.d("디비", "result:null " + result);
+            } else {
+                mJsonString = result;
+                showResult();
+            }
+        }
+
+        private void showResult() {
+            String result = null;
+            String TAG_JSON = "webnautes";
+            String TAG_ID = "id";
+            try {
+                JSONObject jsonObject = new JSONObject(mJsonString);
+                JSONArray jsonArray = jsonObject.getJSONArray(TAG_JSON);
+                Log.d("디비", "됨?");
+
+                for (int i = 0; i < jsonArray.length(); i++) {
+
+                    JSONObject item = jsonArray.getJSONObject(i);
+
+                    result = item.getString(TAG_ID);
+                    plusAdapter.addItem(new PlusItem(result));
+                    listView.setAdapter(plusAdapter);
+                }
+            } catch (JSONException e) {
+                Log.d("디비", "showResult : ", e);
+            }
+        }
     }
 
     @Override
