@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
 
                 result = item.getString(TAG_ID);
                 Log.d("디비",result);
-                if(result.equals("1")) {//아이디가 존재 안할때
+                if(result.equals("1")) {//아이디가 존재 할때
                     SharedPreferences sharedPreferences = getSharedPreferences("sFile",MODE_PRIVATE);
 
                     //저장을 하기위해 editor를 이용하여 값을 저장시켜준다.

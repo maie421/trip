@@ -79,6 +79,7 @@ public class Plus extends AppCompatActivity {
 */
 package com.example.admin.trip;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -89,17 +90,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.CookieManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -112,12 +117,18 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Plus extends AppCompatActivity {
     ListView listView;
-    PlusAdapter plusAdapter;
+    CheckBox checkbox;
+    //PlusAdapter plusAdapter;
+    ArrayList<String> items;
+    ArrayList<String> personnel;
+
+    ArrayAdapter adapter;
     private String mJsonString;
-    ArrayList<PlusItem> items=new ArrayList<PlusItem>();
+   // ArrayList<PlusItem> items=new ArrayList<PlusItem>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -125,28 +136,43 @@ public class Plus extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        /////////////리스트뷰///////////////
-        listView=(ListView)findViewById(R.id.list);
-        plusAdapter=new PlusAdapter(items,getApplicationContext());
+        ////// 내부 임시 저장소////
         SharedPreferences sf = getSharedPreferences("sFile",MODE_PRIVATE);
         //text라는 key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
         String text = sf.getString("text","");
+        //////////
+        items = new ArrayList<String>() ;
+        personnel=new ArrayList<String>();
 
         List task=new List();
         task.execute("http://stu.dothome.co.kr/TripDB/addressbook.php",text);
 
-        ///////////////////////////////
+        listView=(ListView)findViewById(R.id.list);
+        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_multiple_choice, items) ;
 
-        Button result1=(Button)findViewById(R.id.button);//확인
-        result1.setOnClickListener(new View.OnClickListener() {
+
+        Button result=(Button)findViewById(R.id.button);//확인
+        result.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                SparseBooleanArray checkedItems = listView.getCheckedItemPositions();
+                int count = adapter.getCount() ;
+
+                for (int i = count-1; i >= 0; i--) {
+                    if (checkedItems.get(i)) {
+                        String r=items.get(i);
+                        personnel.add(r);
+                    }
+                }
+
                 Intent intent=new Intent(getApplicationContext(),Countrysetting.class);
+                intent.putExtra("personnel",personnel);
                 startActivityForResult(intent,1);
             }
         });
     }
     class List extends AsyncTask<String, Void, String> {
+
         @Override
         protected String doInBackground(String... strings) {
 
@@ -229,15 +255,14 @@ public class Plus extends AppCompatActivity {
                 JSONObject jsonObject = new JSONObject(mJsonString);
                 JSONArray jsonArray = jsonObject.getJSONArray(TAG_JSON);
                 Log.d("디비", "됨?");
-
                 for (int i = 0; i < jsonArray.length(); i++) {
 
                     JSONObject item = jsonArray.getJSONObject(i);
 
                     result = item.getString(TAG_ID);
-                    plusAdapter.addItem(new PlusItem(result));
-                    listView.setAdapter(plusAdapter);
+                    items.add(result);
                 }
+                listView.setAdapter(adapter);
             } catch (JSONException e) {
                 Log.d("디비", "showResult : ", e);
             }
@@ -259,7 +284,8 @@ public class Plus extends AppCompatActivity {
     }
 
 }
-class PlusAdapter extends BaseAdapter {
+
+/*class PlusAdapter extends BaseAdapter {
     ArrayList<PlusItem> items;
     Context context;
 
@@ -286,6 +312,7 @@ class PlusAdapter extends BaseAdapter {
     }
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         PlusItemView view=new PlusItemView(context);
         PlusItem item=items.get(position);
 
@@ -300,6 +327,7 @@ class PlusAdapter extends BaseAdapter {
 class PlusItemView extends LinearLayout {
     TextView name;
     ImageView img;
+    CheckBox check;
     PlusItemView(Context context){
         super(context);
         inin(context);
@@ -313,7 +341,9 @@ class PlusItemView extends LinearLayout {
         inflater.inflate(R.layout.add_friend_list_view,this,true);
         name=(TextView)findViewById(R.id.textView);
         img=(ImageView)findViewById(R.id.imageView);
+        check=(CheckBox)findViewById(R.id.checkbox);
     }
+
 
     public void setName(String name) {
         this.name.setText(name);
@@ -350,4 +380,4 @@ class PlusItem {
         this.img = img;
     }
 }
-
+*/
