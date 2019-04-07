@@ -354,7 +354,7 @@ public class Countryadd extends AppCompatActivity {
                 bufferedReader.close();
                 return sb.toString();
             } catch (IOException e) {
-                Log.d("디비", "InsertData: Erro ", e);
+                Log.d("디비", "InsertData: Error ", e);
 
                 return new String("ERROR:" + e.getMessage());
             }
