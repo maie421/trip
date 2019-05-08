@@ -39,7 +39,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-
+/*세부사항 나라안에 들어가면*/
 public class menu1 extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     SingerAdapter adapter;
@@ -80,6 +80,7 @@ public class menu1 extends AppCompatActivity
         SharedPreferences sf = getSharedPreferences("sFile",MODE_PRIVATE);
         text = sf.getString("text","");//헌재 id불러오기
 
+        /*SharedPreference 사용*/
         menulist add=new menulist();
         try{
             add.execute("http://stu.dothome.co.kr/TripDB/countrymenu.php",text);

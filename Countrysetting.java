@@ -39,7 +39,7 @@ public class Countrysetting extends AppCompatActivity {
 
         Intent intent = getIntent() ;
         personnel=new ArrayList<String>();
-        personnel=intent.getStringArrayListExtra("personne");
+        personnel=intent.getStringArrayListExtra("personnel");
         personnel.add(text+",");//마지막 본인 아이디 ,추가
 
         button.setOnClickListener(new View.OnClickListener() {
