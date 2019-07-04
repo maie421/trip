@@ -3,13 +3,10 @@ package com.example.admin.trip;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -22,7 +19,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -39,7 +35,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-/*세부사항 나라안에 들어가면*/
+/*나라리스트*/
 public class menu1 extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     SingerAdapter adapter;
@@ -98,10 +94,11 @@ public class menu1 extends AppCompatActivity
 
                 //저장을 하기위해 editor를 이용하여 값을 저장시켜준다.
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                String room = item.name; // 사용자가 입력한 저장할 데이터
-                editor.putString("room",room); // key, value를 이용하여 저장하는 형태
+                editor.putString("room",item.name); // key, value를 이용하여 저장하는 형태
+                editor.putString("personnel",item.personnel);
                 editor.commit();
 
+                //Toast.makeText(menu1.this,item.personnel, Toast.LENGTH_SHORT).show();
                 Toast.makeText(menu1.this,item.name, Toast.LENGTH_SHORT).show();
                 Intent intent=new Intent(getApplicationContext(),Countrymenu.class);
                 startActivity(intent);
@@ -196,8 +193,10 @@ public class menu1 extends AppCompatActivity
         }
         private void showResult() {
             String result = null;
+            String personnel=null;
             String TAG_JSON = "webnautes";
             String TAG_Room = "room";
+            String TAG_Personnel="personnel";
             try {
                 JSONObject jsonObject = new JSONObject(mJsonString);
                 JSONArray jsonArray = jsonObject.getJSONArray(TAG_JSON);
@@ -206,7 +205,8 @@ public class menu1 extends AppCompatActivity
                     JSONObject item = jsonArray.getJSONObject(i);
 
                     result = item.getString(TAG_Room);
-                    adapter.addItem(new SingerItem(result));
+                    personnel=item.getString(TAG_Personnel);
+                    adapter.addItem(new SingerItem(result,personnel));
                 }
                 listView.setAdapter(adapter);
             } catch (JSONException e) {
@@ -294,6 +294,7 @@ class SingerAdapter extends BaseAdapter{
         SingerItem item=items.get(position);
         view.setBack(item.back);
         view.setName(item.name);
+
         return view;
     }
 }

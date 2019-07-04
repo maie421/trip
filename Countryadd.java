@@ -83,6 +83,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -101,13 +102,17 @@ import android.widget.ImageView;
 import android.widget.Toast;
 ;import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -121,7 +126,7 @@ public class Countryadd extends AppCompatActivity {
     Boolean album = false;
     ImageView img;
     Bitmap photo;
-    String mJsonString,text,room;
+    String mJsonString,text,room,personnel;
     EditText stay,story;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,7 +168,8 @@ public class Countryadd extends AppCompatActivity {
         });
         SharedPreferences sf = getSharedPreferences("sFile",MODE_PRIVATE);
         text = sf.getString("text","");//헌재 id불러오기
-        room=sf.getString("room","");
+        room=sf.getString("room","");//방
+        personnel=sf.getString("personnel","");//모임
 
         Button button=(Button)findViewById(R.id.button);
         stay=(EditText)findViewById(R.id.editText);
@@ -173,9 +179,11 @@ public class Countryadd extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 BitMapToString(photo);
+                //BitMapToString1(photo);
                 CountryAdd add=new CountryAdd();
                 try {
-                    add.execute("http://stu.dothome.co.kr/TripDB/Countrydetail.php",text,stay.getText().toString(),story.getText().toString(),URLEncoder.encode(image,"utf-8"),room);
+                    add.execute("http://stu.dothome.co.kr/TripDB/Countrydetail.php",text,stay.getText().toString(),story.getText().toString(),URLEncoder.encode(image,"utf-8"),room,personnel);
+                    Toast.makeText(Countryadd.this,personnel, Toast.LENGTH_SHORT).show();
                     finish();
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -183,6 +191,7 @@ public class Countryadd extends AppCompatActivity {
             }
         });
     }
+
     private File createImageFile() throws IOException{
         String imageFileName="tmp_"+String.valueOf(System.currentTimeMillis())+".jpg";
         File storageDir=new File(Environment.getExternalStorageDirectory(),imageFileName);
@@ -232,16 +241,11 @@ public class Countryadd extends AppCompatActivity {
     ////비트맵 bool로 변경//////
     public void BitMapToString(Bitmap bitmap){
         ByteArrayOutputStream baos=new  ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG,100, baos);    //bitmap compress
+        bitmap.compress(Bitmap.CompressFormat.PNG,50, baos);    //bitmap compress
         byte [] arr=baos.toByteArray();
         image= Base64.encodeToString(arr, Base64.DEFAULT);
-        String temp="";
-        try{
-            temp="&imagedevice="+ URLEncoder.encode(image,"utf-8");
-        }catch (Exception e){
-            Log.e("exception",e.toString());
-        }
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -311,13 +315,15 @@ public class Countryadd extends AppCompatActivity {
             String text=(String) strings[3];
             String img=(String)strings[4];
             String room=(String)strings[5];
+            String personnel=(String)strings[6];
 
             String serverURL = (String) strings[0];
             String postParameters = null;
 
-            postParameters = "id=" + id +"&stay="+ stay+"&text="+ text+"&img="+ img+"&country="+ room;
+            postParameters = "id=" + id +"&stay="+ stay+"&text="+ text+"&img="+ img+"&country="+ room+"&personnel="+personnel;
 
             try {
+                //FileInputStream mFileInputStream = new FileInputStream(img);
                 URL url = new URL(serverURL);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
@@ -359,6 +365,7 @@ public class Countryadd extends AppCompatActivity {
                 return new String("ERROR:" + e.getMessage());
             }
         }
+
     }
 }
 

@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button join=(Button)findViewById(R.id.join);
+        final Button join=(Button)findViewById(R.id.join);
         Button menu=(Button)findViewById(R.id.button);
         JoinId=(TextView)findViewById(R.id.id);
         Joinpass=(TextView)findViewById(R.id.pass);
@@ -50,7 +50,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 JoinCheck task=new JoinCheck();
                 try{
-                    task.execute("http://stu.dothome.co.kr/TripDB/LoginCheck.php",JoinId.getText().toString(),Joinpass.getText().toString());
+                    if(JoinId.getText().toString().equals(""))
+                        Toast.makeText(MainActivity.this, "아이디가 빈칸입니다", Toast.LENGTH_SHORT).show();
+                    else if(Joinpass.getText().toString().equals(""))
+                        Toast.makeText(MainActivity.this,"비밀번호가 빈칸입니다",Toast.LENGTH_SHORT).show();
+                    else
+                        task.execute("http://stu.dothome.co.kr/TripDB/LoginCheck.php",JoinId.getText().toString(),Joinpass.getText().toString());
                 }catch (UnsupportedOperationException e){
                     e.printStackTrace();
                 }
@@ -154,12 +159,6 @@ public class MainActivity extends AppCompatActivity {
                     String text = JoinId.getText().toString(); // 사용자가 입력한 저장할 데이터
                     editor.putString("text",text); // key, value를 이용하여 저장하는 형태
                     //다양한 형태의 변수값을 저장할 수 있다.
-                    //editor.putString();
-                    //editor.putBoolean();
-                    //editor.putFloat();
-                    //editor.putLong();
-                    //editor.putInt();
-                    //editor.putStringSet();
                     //최종 커밋
                     editor.commit();
                     Intent intent=new Intent(getApplicationContext(),menu1.class);
