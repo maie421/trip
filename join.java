@@ -1,9 +1,11 @@
 package com.example.admin.trip;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.provider.MediaStore.Images;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,7 +16,11 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
@@ -23,6 +29,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -54,6 +61,7 @@ public class join extends AppCompatActivity {
     String mCurrentPhotoPath,image;
     Uri photoURI,albumURI=null;
     Boolean album = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,7 +89,7 @@ public class join extends AppCompatActivity {
                 }else if(!(pass.getText().toString().equals(pass_chek.getText().toString()))){
                     Toast.makeText(join.this, "비밀번호가 다릅니다", Toast.LENGTH_SHORT).show();
                 } else {
-                    BitMapToString(photo);
+                    //BitMapToString(photo);
                     InsertData task = new InsertData();
                     try {
                         task.execute("http://stu.dothome.co.kr/TripDB/member.php",name.getText().toString(),id.getText().toString(),pass.getText().toString(),URLEncoder.encode(image,"utf-8"));
@@ -124,8 +132,8 @@ public class join extends AppCompatActivity {
 
             }
         });
-    }
 
+    }
     class InsertData extends AsyncTask<String, Void, String>{
         @Override
         protected void onPreExecute() {
@@ -200,6 +208,7 @@ public class join extends AppCompatActivity {
 
                 return new String("Error: " + e.getMessage());
             }
+
         }
     }
 
@@ -240,20 +249,10 @@ public class join extends AppCompatActivity {
         intent.setType(Images.Media.CONTENT_TYPE);
         startActivityForResult(intent,REQUEST_TAKE_PHOTO );
     }
-    private void dispatchTakePictureIntent(){
-        Intent takePictureIntent=new Intent(MediaStore.ACTION_IMAGE_CAPTURE,null);
-        if(takePictureIntent.resolveActivity(getPackageManager())!=null){
-            File photoFile=null;
-            try{
-                photoFile=createImageFile();
-            }catch (IOException e) {
-                Toast.makeText(getApplicationContext(), "createImageFile Failed", Toast.LENGTH_SHORT).show();
-            }
-            if(photoFile !=null){
-                photoURI=Uri.fromFile(photoFile);
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                startActivityForResult(takePictureIntent,REQUEST_IMAGE_CAPTURE);
-            }
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
     }
     private void cropImage(){
@@ -275,7 +274,7 @@ public class join extends AppCompatActivity {
         }
         startActivityForResult(cropIntent,REQUEST_IMAGE_CROP);
     }
-    public void BitMapToString(Bitmap bitmap){
+    /* public void BitMapToString(Bitmap bitmap){
         ByteArrayOutputStream baos=new  ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG,100, baos);    //bitmap compress
         byte [] arr=baos.toByteArray();
@@ -286,8 +285,16 @@ public class join extends AppCompatActivity {
         }catch (Exception e){
             Log.e("exception",e.toString());
         }
-    }
+    }*/
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            img.setImageBitmap(imageBitmap);
+        }
+    }
+    /*@Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
@@ -327,6 +334,7 @@ public class join extends AppCompatActivity {
                 }
                 this.sendBroadcast(mediaScanIntent); //송신
                 break;
-        }
+        }*/
     }
-}
+
+

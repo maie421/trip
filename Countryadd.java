@@ -79,11 +79,14 @@ public class Plus extends AppCompatActivity {
 */
 package com.example.admin.trip;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -91,7 +94,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.Log;
@@ -99,8 +105,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
-;import java.io.BufferedReader;
+;import net.gotev.uploadservice.MultipartUploadRequest;
+import net.gotev.uploadservice.UploadNotificationConfig;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -115,6 +125,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.UUID;
 
 public class Countryadd extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CAPTURE = 1; //메모리할당 한번만 final 값변경 X
@@ -128,6 +139,13 @@ public class Countryadd extends AppCompatActivity {
     Bitmap photo;
     String mJsonString,text,room,personnel;
     EditText stay,story;
+
+    private static final String UPLOAD_URL = "http://stu.dothome.co.kr/TripDB/imgdb.php";
+    private static final int IMAGE_REQUEST_CODE = 3;
+    private static final int STORAGE_PERMISSION_CODE = 123;
+
+    private Bitmap bitmap;
+    private Uri filePath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -178,7 +196,7 @@ public class Countryadd extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BitMapToString(photo);
+                /*BitMapToString(photo);
                 //BitMapToString1(photo);
                 CountryAdd add=new CountryAdd();
                 try {
@@ -187,7 +205,8 @@ public class Countryadd extends AppCompatActivity {
                     finish();
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
-                }
+                }*/
+                uploadMultipart();
             }
         });
     }
@@ -201,29 +220,42 @@ public class Countryadd extends AppCompatActivity {
     private void AlbumAction(){
         Intent intent=new Intent(Intent.ACTION_PICK);
         intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
+
         startActivityForResult(intent,REQUEST_TAKE_PHOTO );
+
+       // startActivityForResult(intent,REQUEST_TAKE_PHOTO );
+    }
+    private void galleryAddPic() {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(String.valueOf(filePath));
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
     }
     private void dispatchTakePictureIntent(){
-        Intent takePictureIntent=new Intent(MediaStore.ACTION_IMAGE_CAPTURE,null);
-        if(takePictureIntent.resolveActivity(getPackageManager())!=null){
-            File photoFile=null;
-            try{
-                photoFile=createImageFile();
-            }catch (IOException e) {
-                Toast.makeText(getApplicationContext(), "createImageFile Failed", Toast.LENGTH_SHORT).show();
-            }
-            if(photoFile !=null){
-                photoURI=Uri.fromFile(photoFile);
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                startActivityForResult(takePictureIntent,REQUEST_IMAGE_CAPTURE);
-            }
+       // File photoFile=null;
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            //galleryAddPic();
+           startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
+        /*File photoFile=null;
+        try{
+            photoFile=createImageFile();
+        }catch (IOException e) {
+            Toast.makeText(getApplicationContext(), "createImageFile Failed", Toast.LENGTH_SHORT).show();
+        }
+        if(photoFile !=null){
+            filePath=Uri.fromFile(photoFile);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,filePath);
+            startActivityForResult(takePictureIntent,REQUEST_IMAGE_CAPTURE);
+        }*/
     }
     private void cropImage(){
         Log.d("리스트","crop");
         Intent cropIntent = new Intent("com.android.camera.action.CROP");
 
-        cropIntent.setDataAndType(photoURI,"image/*");
+        cropIntent.setDataAndType(filePath,"image/*");
         cropIntent.putExtra("scale",true);
         cropIntent.putExtra( "aspectX",1);
         cropIntent.putExtra( "aspectY", 1);
@@ -232,9 +264,7 @@ public class Countryadd extends AppCompatActivity {
 
         Log.d("들어왔다","자르기");
         if(album==false){
-            cropIntent.putExtra("output",photoURI);
-        }else if(album==true){
-            cropIntent.putExtra("output",albumURI);
+            cropIntent.putExtra("output",filePath);
         }
         startActivityForResult(cropIntent,REQUEST_IMAGE_CROP);
     }
@@ -245,8 +275,28 @@ public class Countryadd extends AppCompatActivity {
         byte [] arr=baos.toByteArray();
         image= Base64.encodeToString(arr, Base64.DEFAULT);
     }
-
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            //filePath = data.getData();
+            //cropImage();
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            img.setImageBitmap(imageBitmap);
+        }else if (requestCode==REQUEST_IMAGE_CROP){
+
+        }else if (requestCode == REQUEST_TAKE_PHOTO  && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            filePath = data.getData();
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), filePath);
+                //tvPath.setText("Path: ". concat(getPath(filePath)));
+                img.setImageBitmap(bitmap);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    /*@Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
@@ -287,8 +337,8 @@ public class Countryadd extends AppCompatActivity {
                 this.sendBroadcast(mediaScanIntent); //송신
                 break;
         }
-    }
-    class CountryAdd extends AsyncTask<String, Void, String> {
+    }*/
+    /*class CountryAdd extends AsyncTask<String, Void, String> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -366,6 +416,76 @@ public class Countryadd extends AppCompatActivity {
             }
         }
 
+    }*/
+    ///이미지 업로드////
+    public void uploadMultipart() {
+        String caption = stay.getText().toString().trim();
+
+        //getting the actual path of the image
+        String path = getPath(photoURI);//filePath
+
+        //Uploading code
+        try {
+            String uploadId = UUID.randomUUID().toString();
+
+            //Creating a multi part request
+            new MultipartUploadRequest(this, uploadId, UPLOAD_URL)
+                    .addFileToUpload(path, "image") //Adding file
+                    .addParameter("caption", caption) //Adding text parameter to the request
+                    .setNotificationConfig(new UploadNotificationConfig())
+                    .setMaxRetries(2)
+                    .startUpload(); //Starting the upload
+        } catch (Exception exc) {
+            Toast.makeText(this, exc.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getPath(Uri uri) {
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        cursor.moveToFirst();
+        String document_id = cursor.getString(0);
+        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+        cursor.close();
+
+        cursor = getContentResolver().query(
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                null, MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+        cursor.moveToFirst();
+        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+        cursor.close();
+
+        return path;
+    }
+
+    private void requestStoragePermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            return;
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            //If the user has denied the permission previously your code will come to this block
+            //Here you can explain why you need this permission
+            //Explain here why you need this permission
+        }
+        //And finally ask for the permission
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+    }
+
+    //This method will be called when the user will tap on allow or deny
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        //Checking the request code of our request
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+
+            //If permission is granted
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //Displaying a toast
+                Toast.makeText(this, "Permission granted now you can read the storage", Toast.LENGTH_LONG).show();
+            } else {
+                //Displaying another toast if permission is not granted
+                Toast.makeText(this, "Oops you just denied the permission", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
 
